@@ -32,7 +32,7 @@ public class Denuncia {
     private String tipoDenuncia;
 
     @Lob
-    @Column(name = "descricao")
+    @Column(name = "descricao", nullable = false)
     private String descricao; // VARCHAR(MAX)
 
     @Column(name = "dataOcorrencia", nullable = false)
@@ -51,7 +51,7 @@ public class Denuncia {
     private Boolean denunciaAnonima;
 
     @Column(name = "status", nullable = false, length = 30)
-    private String status; // RECEBIDA | EM_ANALISE | RESOLVIDA | ARQUIVADA
+    private String status; // RECEBIDA | EM_ANALISE | ENCAMINHADA | EM_ATENDIMENTO | FINALIZADA
 
     @Column(name = "dataRegistro", nullable = false)
     private LocalDateTime dataRegistro;

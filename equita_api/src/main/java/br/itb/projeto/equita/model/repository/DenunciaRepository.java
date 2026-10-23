@@ -10,5 +10,5 @@ import br.itb.projeto.equita.model.entity.Denuncia;
 @Repository
 public interface DenunciaRepository extends JpaRepository<Denuncia, Long> {
 
-    Optional<Denuncia> findByProtocolo(String protocolo);
+    Optional<Denuncia> findByProtocoloAndAtivoTrue(String protocolo);
 }

@@ -26,16 +26,15 @@ public class UsuarioService {
     public Usuario create(Usuario usuario) {
 
         usuario.setId(null);
+        validarIdentificacao(usuario);
+        validarSenha(usuario.getPassword());
 
-        if (usuario.getUsername() != null
-                && usuarioRepository.findByUsername(usuario.getUsername()).isPresent()) {
+        if (usuarioRepository.findByUsername(usuario.getUsername()).isPresent()) {
             throw new RuntimeException("Username já cadastrado");
         }
 
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        if (usuario.getNivelAcesso() == null) {
-            usuario.setNivelAcesso("USER");
-        }
+        usuario.setNivelAcesso("USER");
         usuario.setStatusUsuario("ATIVO");
         usuario.setDataCadastro(LocalDateTime.now());
         usuario.setDataAtualizacao(null);
@@ -48,16 +47,15 @@ public class UsuarioService {
 
         Usuario _usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        validarIdentificacao(usuario);
 
-        if (usuario.getUsername() != null
-                && !usuario.getUsername().equals(_usuario.getUsername())
+        if (!usuario.getUsername().equals(_usuario.getUsername())
                 && usuarioRepository.findByUsername(usuario.getUsername()).isPresent()) {
             throw new RuntimeException("Username já cadastrado");
         }
 
         _usuario.setNome(usuario.getNome());
         _usuario.setUsername(usuario.getUsername());
-        _usuario.setNivelAcesso(usuario.getNivelAcesso());
         // a senha não é alterada por aqui → usar /alterar-senha
         _usuario.setDataAtualizacao(LocalDateTime.now());
 
@@ -69,6 +67,7 @@ public class UsuarioService {
 
         Usuario _usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        validarSenha(novaSenha);
 
         _usuario.setPassword(passwordEncoder.encode(novaSenha));
         if ("TROCAR_SENHA".equals(_usuario.getStatusUsuario())) {
@@ -100,6 +99,31 @@ public class UsuarioService {
         _usuario.setDataAtualizacao(LocalDateTime.now());
 
         return usuarioRepository.save(_usuario);
+    }
+
+    private void validarIdentificacao(Usuario usuario) {
+        if (usuario.getNome() == null || usuario.getNome().isBlank()) {
+            throw new RuntimeException("O nome é obrigatório");
+        }
+        if (usuario.getUsername() == null || usuario.getUsername().isBlank()) {
+            throw new RuntimeException("O e-mail/username é obrigatório");
+        }
+
+        usuario.setNome(usuario.getNome().trim());
+        usuario.setUsername(usuario.getUsername().trim());
+
+        if (usuario.getNome().length() > 254) {
+            throw new RuntimeException("O nome deve ter no máximo 254 caracteres");
+        }
+        if (usuario.getUsername().length() > 255) {
+            throw new RuntimeException("O e-mail/username deve ter no máximo 255 caracteres");
+        }
+    }
+
+    private void validarSenha(String senha) {
+        if (senha == null || senha.isBlank()) {
+            throw new RuntimeException("A senha é obrigatória");
+        }
     }
 
     /* ================= LOGIN ================= */

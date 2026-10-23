@@ -10,7 +10,7 @@ import br.itb.projeto.equita.model.entity.Curso;
 @Repository
 public interface CursoRepository extends JpaRepository<Curso, Long> {
 
-    List<Curso> findByPublicadoTrue(); // catálogo de cursos visível
+    List<Curso> findByPublicadoTrueAndStatusAprovacao(String statusAprovacao);
 
     List<Curso> findByVoluntarioId(Long voluntarioId);
 }

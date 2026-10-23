@@ -31,18 +31,20 @@ public class DenunciaService {
 
         denuncia.setId(null);
 
+        normalizarAnonimato(denuncia);
         validarForeignKeys(denuncia);
 
         if (denuncia.getTipoDenuncia() == null || denuncia.getTipoDenuncia().isBlank()) {
             throw new RuntimeException("O tipo da denúncia é obrigatório");
         }
+        if (denuncia.getDescricao() == null || denuncia.getDescricao().isBlank()) {
+            throw new RuntimeException("A descrição da denúncia é obrigatória");
+        }
         if (denuncia.getDataOcorrencia() == null) {
             throw new RuntimeException("A data da ocorrência é obrigatória");
         }
+        validarStatus(denuncia.getStatus());
 
-        if (denuncia.getDenunciaAnonima() == null) {
-            denuncia.setDenunciaAnonima(true);
-        }
         if (denuncia.getStatus() == null) {
             denuncia.setStatus("RECEBIDA");
         }
@@ -63,14 +65,22 @@ public class DenunciaService {
         Denuncia _denuncia = denunciaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Denúncia não encontrada"));
 
+        normalizarAnonimato(denuncia);
         validarForeignKeys(denuncia);
 
         if (denuncia.getTipoDenuncia() == null || denuncia.getTipoDenuncia().isBlank()) {
             throw new RuntimeException("O tipo da denúncia é obrigatório");
         }
+        if (denuncia.getDescricao() == null || denuncia.getDescricao().isBlank()) {
+            throw new RuntimeException("A descrição da denúncia é obrigatória");
+        }
         if (denuncia.getDataOcorrencia() == null) {
             throw new RuntimeException("A data da ocorrência é obrigatória");
         }
+        if (denuncia.getStatus() == null) {
+            throw new RuntimeException("O status da denúncia é obrigatório na edição");
+        }
+        validarStatus(denuncia.getStatus());
 
         // protocolo e dataRegistro são gerados no create e não mudam
         _denuncia.setUsuarioId(denuncia.getUsuarioId());
@@ -85,6 +95,26 @@ public class DenunciaService {
         _denuncia.setStatus(denuncia.getStatus());
 
         return denunciaRepository.save(_denuncia);
+    }
+
+    private void normalizarAnonimato(Denuncia denuncia) {
+        if (denuncia.getDenunciaAnonima() == null) {
+            denuncia.setDenunciaAnonima(true);
+        }
+        if (Boolean.TRUE.equals(denuncia.getDenunciaAnonima())) {
+            denuncia.setUsuarioId(null);
+        }
+    }
+
+    private void validarStatus(String status) {
+        if (status != null
+                && !"RECEBIDA".equals(status)
+                && !"EM_ANALISE".equals(status)
+                && !"ENCAMINHADA".equals(status)
+                && !"EM_ATENDIMENTO".equals(status)
+                && !"FINALIZADA".equals(status)) {
+            throw new RuntimeException("Status da denúncia inválido");
+        }
     }
 
     // valida as FKs opcionais só quando o id veio preenchido
@@ -140,7 +170,7 @@ public class DenunciaService {
 
     // usado pela página "Consultar protocolo" do frontend
     public Denuncia findByProtocolo(String protocolo) {
-        return denunciaRepository.findByProtocolo(protocolo)
+        return denunciaRepository.findByProtocoloAndAtivoTrue(protocolo)
                 .orElseThrow(() -> new RuntimeException("Protocolo não encontrado"));
     }
 }

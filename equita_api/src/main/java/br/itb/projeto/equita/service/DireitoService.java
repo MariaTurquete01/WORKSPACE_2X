@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import br.itb.projeto.equita.model.entity.CategoriaDireito;
 import br.itb.projeto.equita.model.entity.Direito;
 import br.itb.projeto.equita.model.repository.CategoriaDireitoRepository;
 import br.itb.projeto.equita.model.repository.DireitoRepository;
@@ -30,6 +31,9 @@ public class DireitoService {
         if (direito.getTitulo() == null || direito.getTitulo().isBlank()) {
             throw new RuntimeException("O título do direito é obrigatório");
         }
+        if (direito.getConteudo() == null || direito.getConteudo().isBlank()) {
+            throw new RuntimeException("O conteúdo do direito é obrigatório");
+        }
 
         if (direito.getAtivo() == null) {
             direito.setAtivo(true);
@@ -50,6 +54,9 @@ public class DireitoService {
         if (direito.getTitulo() == null || direito.getTitulo().isBlank()) {
             throw new RuntimeException("O título do direito é obrigatório");
         }
+        if (direito.getConteudo() == null || direito.getConteudo().isBlank()) {
+            throw new RuntimeException("O conteúdo do direito é obrigatório");
+        }
 
         // ativo e dataCadastro não mudam por aqui
         _direito.setCategoriaDireitoId(direito.getCategoriaDireitoId());
@@ -61,9 +68,14 @@ public class DireitoService {
     }
 
     private void validarCategoria(Long categoriaDireitoId) {
-        if (categoriaDireitoId == null
-                || !categoriaDireitoRepository.existsById(categoriaDireitoId)) {
+        if (categoriaDireitoId == null) {
             throw new RuntimeException("Categoria de direito não encontrada");
+        }
+
+        CategoriaDireito categoria = categoriaDireitoRepository.findById(categoriaDireitoId)
+                .orElseThrow(() -> new RuntimeException("Categoria de direito não encontrada"));
+        if (!Boolean.TRUE.equals(categoria.getAtivo())) {
+            throw new RuntimeException("A categoria de direito está inativa");
         }
     }
 

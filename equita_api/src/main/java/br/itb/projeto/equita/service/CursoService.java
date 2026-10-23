@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import br.itb.projeto.equita.model.entity.Curso;
+import br.itb.projeto.equita.model.entity.Usuario;
 import br.itb.projeto.equita.model.repository.CursoRepository;
 import br.itb.projeto.equita.model.repository.UsuarioRepository;
 
@@ -30,14 +31,12 @@ public class CursoService {
         if (curso.getTitulo() == null || curso.getTitulo().isBlank()) {
             throw new RuntimeException("O título do curso é obrigatório");
         }
+        if (curso.getDescricao() == null || curso.getDescricao().isBlank()) {
+            throw new RuntimeException("A descrição do curso é obrigatória");
+        }
 
-        if (curso.getStatusAprovacao() == null) {
-            curso.setStatusAprovacao("PENDENTE");
-        }
-        // todo curso novo nasce não publicado (aparece só após aprovação)
-        if (curso.getPublicado() == null) {
-            curso.setPublicado(false);
-        }
+        curso.setStatusAprovacao("PENDENTE");
+        curso.setPublicado(false);
         curso.setDataCadastro(LocalDateTime.now());
         curso.setDataAtualizacao(null);
 
@@ -55,20 +54,42 @@ public class CursoService {
         if (curso.getTitulo() == null || curso.getTitulo().isBlank()) {
             throw new RuntimeException("O título do curso é obrigatório");
         }
+        if (curso.getDescricao() == null || curso.getDescricao().isBlank()) {
+            throw new RuntimeException("A descrição do curso é obrigatória");
+        }
+        validarStatusAprovacao(curso.getStatusAprovacao());
 
         _curso.setVoluntarioId(curso.getVoluntarioId());
         _curso.setTitulo(curso.getTitulo());
         _curso.setDescricao(curso.getDescricao());
         _curso.setCargaHoraria(curso.getCargaHoraria());
         _curso.setStatusAprovacao(curso.getStatusAprovacao());
+        if (!"APROVADO".equals(curso.getStatusAprovacao())) {
+            _curso.setPublicado(false);
+        }
         _curso.setDataAtualizacao(LocalDateTime.now());
 
         return cursoRepository.save(_curso);
     }
 
     private void validarVoluntario(Long voluntarioId) {
-        if (voluntarioId == null || !usuarioRepository.existsById(voluntarioId)) {
+        if (voluntarioId == null) {
             throw new RuntimeException("Usuário voluntário não encontrado");
+        }
+
+        Usuario usuario = usuarioRepository.findById(voluntarioId)
+                .orElseThrow(() -> new RuntimeException("Usuário voluntário não encontrado"));
+        if (!"VOLUNTARIO".equals(usuario.getNivelAcesso())
+                || !"ATIVO".equals(usuario.getStatusUsuario())) {
+            throw new RuntimeException("É necessário um usuário ativo com perfil de voluntário");
+        }
+    }
+
+    private void validarStatusAprovacao(String statusAprovacao) {
+        if (!"PENDENTE".equals(statusAprovacao)
+                && !"APROVADO".equals(statusAprovacao)
+                && !"REPROVADO".equals(statusAprovacao)) {
+            throw new RuntimeException("Status de aprovação do curso inválido");
         }
     }
 
@@ -89,6 +110,10 @@ public class CursoService {
         Curso _curso = cursoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
 
+        if (!"APROVADO".equals(_curso.getStatusAprovacao())) {
+            throw new RuntimeException("Somente cursos aprovados podem ser publicados");
+        }
+
         _curso.setPublicado(true);
         _curso.setDataAtualizacao(LocalDateTime.now());
 
@@ -107,7 +132,7 @@ public class CursoService {
 
     // catálogo: só cursos publicados
     public List<Curso> findPublicados() {
-        return cursoRepository.findByPublicadoTrue();
+        return cursoRepository.findByPublicadoTrueAndStatusAprovacao("APROVADO");
     }
 
     public List<Curso> findByVoluntarioId(Long voluntarioId) {

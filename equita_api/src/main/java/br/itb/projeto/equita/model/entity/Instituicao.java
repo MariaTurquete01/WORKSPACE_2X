@@ -27,13 +27,13 @@ public class Instituicao {
     @Column(name = "descricao", length = 500)
     private String descricao;
 
-    @Column(name = "endereco", length = 250)
+    @Column(name = "endereco", nullable = false, length = 250)
     private String endereco;
 
-    @Column(name = "cidade", length = 100)
+    @Column(name = "cidade", nullable = false, length = 100)
     private String cidade;
 
-    @Column(name = "estado", length = 2)
+    @Column(name = "estado", nullable = false, length = 2)
     private String estado; // UF
 
     @Column(name = "cep", length = 10)

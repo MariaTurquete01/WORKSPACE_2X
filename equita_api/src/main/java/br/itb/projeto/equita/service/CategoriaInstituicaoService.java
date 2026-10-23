@@ -71,7 +71,9 @@ public class CategoriaInstituicaoService {
 
     /* ================= CONSULTAS ================= */
     public List<CategoriaInstituicao> findAll() {
-        return categoriaInstituicaoRepository.findAll();
+        return categoriaInstituicaoRepository.findAll().stream()
+                .filter(categoria -> Boolean.TRUE.equals(categoria.getAtivo()))
+                .toList();
     }
 
     public CategoriaInstituicao findById(Long id) {

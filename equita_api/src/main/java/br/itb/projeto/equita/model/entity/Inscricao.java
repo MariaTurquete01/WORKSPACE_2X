@@ -27,7 +27,7 @@ public class Inscricao {
     @Column(name = "dataInscricao", nullable = false)
     private LocalDateTime dataInscricao;
 
-    @Column(name = "percentualProgresso", precision = 5, scale = 2)
+    @Column(name = "percentualProgresso", nullable = false, precision = 5, scale = 2)
     private BigDecimal percentualProgresso; // 0.00 a 100.00
 
     @Column(name = "concluido", nullable = false)

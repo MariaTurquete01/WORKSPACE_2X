@@ -33,11 +33,16 @@ public class InscricaoService {
         validarUsuario(inscricao.getUsuarioId());
         validarCurso(inscricao.getCursoId());
 
-        // regra de negócio: o mesmo usuário não se inscreve 2x no mesmo curso
-        if (inscricaoRepository
-                .findByUsuarioIdAndCursoId(inscricao.getUsuarioId(), inscricao.getCursoId())
-                .isPresent()) {
-            throw new RuntimeException("Usuário já inscrito neste curso");
+        var inscricaoExistente = inscricaoRepository
+                .findByUsuarioIdAndCursoId(inscricao.getUsuarioId(), inscricao.getCursoId());
+        if (inscricaoExistente.isPresent()) {
+            Inscricao existente = inscricaoExistente.get();
+            if (Boolean.TRUE.equals(existente.getAtivo())) {
+                throw new RuntimeException("Usuário já inscrito neste curso");
+            }
+
+            existente.setAtivo(true);
+            return inscricaoRepository.save(existente);
         }
 
         inscricao.setDataInscricao(LocalDateTime.now());
@@ -50,6 +55,8 @@ public class InscricaoService {
         if (inscricao.getAtivo() == null) {
             inscricao.setAtivo(true);
         }
+        validarProgresso(inscricao.getPercentualProgresso());
+        validarConclusao(inscricao);
 
         return inscricaoRepository.save(inscricao);
     }
@@ -63,11 +70,8 @@ public class InscricaoService {
         validarUsuario(inscricao.getUsuarioId());
         validarCurso(inscricao.getCursoId());
 
-        if (inscricao.getPercentualProgresso() != null
-                && (inscricao.getPercentualProgresso().compareTo(BigDecimal.ZERO) < 0
-                        || inscricao.getPercentualProgresso().compareTo(new BigDecimal("100")) > 0)) {
-            throw new RuntimeException("O percentual de progresso deve estar entre 0 e 100");
-        }
+        validarProgresso(inscricao.getPercentualProgresso());
+        validarConclusao(inscricao);
 
         // dataInscricao não muda depois de criada
         _inscricao.setUsuarioId(inscricao.getUsuarioId());
@@ -77,6 +81,34 @@ public class InscricaoService {
         _inscricao.setDataConclusao(inscricao.getDataConclusao());
 
         return inscricaoRepository.save(_inscricao);
+    }
+
+    private void validarProgresso(BigDecimal percentualProgresso) {
+        if (percentualProgresso == null
+                || percentualProgresso.compareTo(BigDecimal.ZERO) < 0
+                || percentualProgresso.compareTo(new BigDecimal("100")) > 0) {
+            throw new RuntimeException("O percentual de progresso deve estar entre 0 e 100");
+        }
+    }
+
+    private void validarConclusao(Inscricao inscricao) {
+        if (inscricao.getConcluido() == null) {
+            throw new RuntimeException("Informe se a inscrição foi concluída");
+        }
+
+        boolean progressoCompleto = inscricao.getPercentualProgresso()
+                .compareTo(new BigDecimal("100")) == 0;
+        if (Boolean.TRUE.equals(inscricao.getConcluido()) != progressoCompleto) {
+            throw new RuntimeException("A conclusão deve corresponder a 100% de progresso");
+        }
+
+        if (progressoCompleto) {
+            if (inscricao.getDataConclusao() == null) {
+                inscricao.setDataConclusao(LocalDateTime.now());
+            }
+        } else {
+            inscricao.setDataConclusao(null);
+        }
     }
 
     private void validarUsuario(Long usuarioId) {

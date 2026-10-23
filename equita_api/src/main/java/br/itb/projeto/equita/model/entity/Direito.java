@@ -25,7 +25,7 @@ public class Direito {
     private String titulo;
 
     @Lob
-    @Column(name = "conteudo")
+    @Column(name = "conteudo", nullable = false)
     private String conteudo; // VARCHAR(MAX)
 
     @Column(name = "referenciaOrgao", length = 300)

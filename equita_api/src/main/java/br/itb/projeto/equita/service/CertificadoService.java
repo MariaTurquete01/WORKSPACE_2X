@@ -1,5 +1,6 @@
 package br.itb.projeto.equita.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -7,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import br.itb.projeto.equita.model.entity.Certificado;
+import br.itb.projeto.equita.model.entity.Inscricao;
 import br.itb.projeto.equita.model.repository.CertificadoRepository;
 import br.itb.projeto.equita.model.repository.InscricaoRepository;
 
@@ -74,8 +76,19 @@ public class CertificadoService {
     }
 
     private void validarInscricao(Long inscricaoId) {
-        if (inscricaoId == null || !inscricaoRepository.existsById(inscricaoId)) {
+        if (inscricaoId == null) {
             throw new RuntimeException("Inscrição não encontrada");
+        }
+
+        Inscricao inscricao = inscricaoRepository.findById(inscricaoId)
+                .orElseThrow(() -> new RuntimeException("Inscrição não encontrada"));
+        if (!Boolean.TRUE.equals(inscricao.getAtivo())) {
+            throw new RuntimeException("Não é possível emitir certificado para inscrição inativa");
+        }
+        if (!Boolean.TRUE.equals(inscricao.getConcluido())
+                || inscricao.getPercentualProgresso() == null
+                || inscricao.getPercentualProgresso().compareTo(BigDecimal.valueOf(100)) < 0) {
+            throw new RuntimeException("A inscrição precisa estar concluída para emitir certificado");
         }
     }
 

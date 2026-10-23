@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import br.itb.projeto.equita.model.entity.Material;
+import br.itb.projeto.equita.model.entity.Usuario;
 import br.itb.projeto.equita.model.repository.CursoRepository;
 import br.itb.projeto.equita.model.repository.MaterialRepository;
 import br.itb.projeto.equita.model.repository.UsuarioRepository;
@@ -39,13 +40,8 @@ public class MaterialService {
             throw new RuntimeException("O tipo do material é obrigatório");
         }
 
-        if (material.getStatusAprovacao() == null) {
-            material.setStatusAprovacao("PENDENTE");
-        }
-        // todo material novo nasce não publicado (aparece só após aprovação)
-        if (material.getPublicado() == null) {
-            material.setPublicado(false);
-        }
+        material.setStatusAprovacao("PENDENTE");
+        material.setPublicado(false);
         material.setDataCadastro(LocalDateTime.now());
         material.setDataAtualizacao(null);
 
@@ -67,6 +63,7 @@ public class MaterialService {
         if (material.getTipoMaterial() == null || material.getTipoMaterial().isBlank()) {
             throw new RuntimeException("O tipo do material é obrigatório");
         }
+        validarStatusAprovacao(material.getStatusAprovacao());
 
         _material.setCursoId(material.getCursoId());
         _material.setVoluntarioId(material.getVoluntarioId());
@@ -76,6 +73,9 @@ public class MaterialService {
         _material.setCaminhoArquivo(material.getCaminhoArquivo());
         _material.setLinkExterno(material.getLinkExterno());
         _material.setStatusAprovacao(material.getStatusAprovacao());
+        if (!"APROVADO".equals(material.getStatusAprovacao())) {
+            _material.setPublicado(false);
+        }
         _material.setDataAtualizacao(LocalDateTime.now());
 
         return materialRepository.save(_material);
@@ -88,8 +88,23 @@ public class MaterialService {
     }
 
     private void validarVoluntario(Long voluntarioId) {
-        if (voluntarioId == null || !usuarioRepository.existsById(voluntarioId)) {
+        if (voluntarioId == null) {
             throw new RuntimeException("Usuário voluntário não encontrado");
+        }
+
+        Usuario usuario = usuarioRepository.findById(voluntarioId)
+                .orElseThrow(() -> new RuntimeException("Usuário voluntário não encontrado"));
+        if (!"VOLUNTARIO".equals(usuario.getNivelAcesso())
+                || !"ATIVO".equals(usuario.getStatusUsuario())) {
+            throw new RuntimeException("É necessário um usuário ativo com perfil de voluntário");
+        }
+    }
+
+    private void validarStatusAprovacao(String statusAprovacao) {
+        if (!"PENDENTE".equals(statusAprovacao)
+                && !"APROVADO".equals(statusAprovacao)
+                && !"REPROVADO".equals(statusAprovacao)) {
+            throw new RuntimeException("Status de aprovação do material inválido");
         }
     }
 
@@ -109,6 +124,17 @@ public class MaterialService {
 
         Material _material = materialRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material não encontrado"));
+
+        if (!"APROVADO".equals(_material.getStatusAprovacao())) {
+            throw new RuntimeException("Somente materiais aprovados podem ser publicados");
+        }
+
+        var curso = cursoRepository.findById(_material.getCursoId())
+            .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
+        if (!"APROVADO".equals(curso.getStatusAprovacao())
+            || !Boolean.TRUE.equals(curso.getPublicado())) {
+            throw new RuntimeException("O curso precisa estar aprovado e publicado");
+        }
 
         _material.setPublicado(true);
         _material.setDataAtualizacao(LocalDateTime.now());

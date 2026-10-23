@@ -202,7 +202,17 @@ CREATE TABLE Instituicoes
     PRIMARY KEY (id),
 
     CONSTRAINT FK_Instituicoes_CategoriaInstituicao
-        FOREIGN KEY (categoriaInstituicaoId) REFERENCES CategoriasInstituicao(id)
+        FOREIGN KEY (categoriaInstituicaoId) REFERENCES CategoriasInstituicao(id),
+
+    CONSTRAINT CK_Instituicoes_Coordenadas
+        CHECK (
+            (latitude IS NULL AND longitude IS NULL)
+            OR (
+                latitude IS NOT NULL AND longitude IS NOT NULL
+                AND latitude BETWEEN -90 AND 90
+                AND longitude BETWEEN -180 AND 180
+            )
+        )
 );
 GO
 
@@ -228,7 +238,7 @@ CREATE TABLE Denuncias
     instituicaoResponsavelId INT           NULL,
     tipoDenuncia             VARCHAR(100)  NOT NULL,
     descricao                VARCHAR(MAX)  NOT NULL,
-    dataOcorrencia           DATE          NULL,
+    dataOcorrencia           DATE          NOT NULL,
     localOcorrencia          VARCHAR(300)  NULL,
     cidadeOcorrencia         VARCHAR(100)  NULL,
     estadoOcorrencia         CHAR(2)       NULL,

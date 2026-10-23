@@ -2,6 +2,8 @@ package br.itb.projeto.equita.model.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,11 +25,12 @@ public class Usuario {
     @Column(name = "username", nullable = false, length = 255, unique = true)
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", nullable = false, length = 100)
     private String password; // armazenada com bcrypt
 
     @Column(name = "nivelAcesso", length = 10)
-    private String nivelAcesso; // ADMIN | USER
+    private String nivelAcesso; // ADMIN | USER | VOLUNTARIO
 
     @Column(name = "dataCadastro", nullable = false)
     private LocalDateTime dataCadastro;
